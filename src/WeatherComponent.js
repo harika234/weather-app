@@ -137,10 +137,11 @@ const WeatherComponent = () => {
           >
             <div className="grid grid-cols-1 gap-0 text-gray-700 border border-black">
               
-              <div className="font-medium bg-orange-300 p-3 border-b border-black">Date: {new Date(day.dt * 1000).toLocaleDateString()}</div>
+              <div className="font-medium bg-orange-500 p-3 border-b border-black">Date: {new Date(day.dt * 1000).toLocaleDateString()}</div>
               
              
-              <div className="font-medium border-b border-black p-2">Temperature: </div>
+              
+              <div className="font-medium border-b border-black text-center p-2">Temperature</div>
               
              
               <div className="grid grid-cols-2 gap-0 border-b border-black">
