@@ -5,34 +5,36 @@ const WeatherComponent = () => {
   const [city, setCity] = useState('');
   const [forecast, setForecast] = useState([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // State to manage loading
   const navigate = useNavigate();
 
   const fetchWeatherData = async () => {
     const apiKey = '1635890035cbba097fd5c26c8ea672a1';
 
     try {
-      
+      setLoading(true); // Start loading
+      // Fetch latitude and longitude using the Geocoding API
       const geoUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`;
       const geoResponse = await fetch(geoUrl);
       const geoData = await geoResponse.json();
 
-      
+      // Check if the city is valid
       if (geoData.length === 0) throw new Error('Invalid city');
 
       const { lat, lon } = geoData[0];
 
-      
+      // Fetch the weather forecast using latitude and longitude
       const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
       const weatherResponse = await fetch(weatherUrl);
       const weatherData = await weatherResponse.json();
 
-     
+      // Process and group weather data for 5 days, excluding today
       const dailyForecast = {};
       const todayDate = new Date().toLocaleDateString();
 
       weatherData.list.forEach((item) => {
         const date = new Date(item.dt * 1000).toLocaleDateString();
-       
+        // Store the first forecast for each day, excluding today's date
         if (date !== todayDate && !dailyForecast[date]) {
           dailyForecast[date] = item; 
         }
@@ -49,6 +51,8 @@ const WeatherComponent = () => {
       } else {
         setError('Unable to fetch weather data. Please try again later.');
       }
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -58,17 +62,17 @@ const WeatherComponent = () => {
     }
   };
 
-  
+  // Exit button handler
   const handleExit = () => {
     navigate('/');
   };
 
   return (
     <div className="max-w-full mx-auto p-6 bg-white rounded-lg shadow-md">
-    
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-orange-500">Weather in Your City</h1>
-        <div className="flex items-center">
+      {/* Flex container for heading and search bar */}
+      <div className="flex flex-col md:flex-row items-center justify-items-start mb-4">
+        <h1 className="text-2xl font-bold text-orange-500 p-8">Weather in Your City</h1>
+        <div className="flex items-center mt-4 md:mt-0 p-12">
           <input
             type="text"
             value={city}
@@ -78,17 +82,32 @@ const WeatherComponent = () => {
           />
           <button
             onClick={handleSearch}
-            className="ml-2 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition"
+            className="bg-orange-500 text-white p-2 rounded-md hover:bg-orange-600 transition ml-2"
           >
-            Get Forecast
+            Search
           </button>
+          {loading && (
+            <div className="ml-2 flex items-center">
+              <svg
+                className="h-5 w-5 text-orange-500 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path d="M12 2a10 10 0 0 1 0 20" fill="none" />
+              </svg>
+            </div>
+          )}
         </div>
       </div>
 
-     
+      {/* Display error message if any */}
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
 
-      
+      {/* Exit Button */}
       <div className="flex justify-end mt-4">
         <button
           onClick={handleExit}
@@ -98,43 +117,41 @@ const WeatherComponent = () => {
         </button>
       </div>
 
-     
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-6">
+      {/* Weather Forecast Tables */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mt-6">
         {forecast.map((day, index) => (
           <div
             key={index}
-            className="bg-gray-100 p-4 rounded-lg shadow-sm transition"
+            className="border border-gray-300 p-4 bg-gray-100 rounded-lg shadow-md min-h-[200px]"
           >
-            
-            <div className="grid grid-cols-1 gap-2 text-gray-700">
+            <div className="grid grid-cols-1 gap-0 text-gray-700 border border-black">
+              {/* 1st Row: Date with orange background */}
+              <div className="font-medium bg-orange-300 p-3 border-b border-black">Date: {new Date(day.dt * 1000).toLocaleDateString()}</div>
               
-              <div className="font-medium bg-orange-300 p-2">Date: {new Date(day.dt * 1000).toLocaleDateString()}</div>
-              <hr className="border-2 border-black" /> {/* Darker line */}
+              {/* 2nd Row: Temperature */}
+              <div className="font-medium border-b border-black p-2 align-middle">Temperature</div>
               
-              <div className="font-medium">Temperature: {Math.round(day.main.temp)}°C</div>
-              <hr className="border-2 border-black" />
+              {/* 3rd Row: Min and Max Temperature in two columns */}
+              <div className="grid grid-cols-2 gap-0 border-b border-black">
+                <div className="font-medium border-r border-black p-2">Min Temp:</div>
+                <div className="p-2">{Math.round(day.main.temp_min)}°C</div>
+              </div>
+              <div className="grid grid-cols-2 gap-0 border-b border-black">
+                <div className="font-medium border-r border-black p-2">Max Temp:</div>
+                <div className="p-2">{Math.round(day.main.temp_max)}°C</div>
+              </div>
               
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium">Min Temp:</div>
-                <div>{Math.round(day.main.temp_min)}°C</div>
+              {/* 4th Row: Pressure in two columns */}
+              <div className="grid grid-cols-2 gap-0 border-b border-black">
+                <div className="font-medium border-r border-black p-2">Pressure:</div>
+                <div className="p-2">{day.main.pressure} hPa</div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium">Max Temp:</div>
-                <div>{Math.round(day.main.temp_max)}°C</div>
+             
+              {/* 5th Row: Humidity in two columns */}
+              <div className="grid grid-cols-2 gap-0">
+                <div className="font-medium border-r border-black p-2">Humidity:</div>
+                <div className="p-2">{day.main.humidity}%</div>
               </div>
-              <hr className="border-2 border-black" />
-            
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium">Pressure:</div>
-                <div>{day.main.pressure} hPa</div>
-              </div>
-              <hr className="border-2 border-black" />
-           
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium">Humidity:</div>
-                <div>{day.main.humidity}%</div>
-              </div>
-              <hr className="border-2 border-black" />
             </div>
           </div>
         ))}
