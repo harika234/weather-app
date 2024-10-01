@@ -1,36 +1,50 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 
 const WeatherComponent = () => {
   const [city, setCity] = useState('');
   const [forecast, setForecast] = useState([]);
-  const [error, setError] = useState(''); 
+  const [error, setError] = useState('');
+  const navigate = useNavigate(); 
 
   const fetchWeatherData = async () => {
     const apiKey = '1635890035cbba097fd5c26c8ea672a1'; 
-    const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
 
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('City not found'); 
-      const data = await response.json();
+      
+      const geoUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`;
+      const geoResponse = await fetch(geoUrl);
+      const geoData = await geoResponse.json();
 
       
+      if (geoData.length === 0) throw new Error('Invalid city'); 
+
+      const { lat, lon } = geoData[0];
+
+     
+      const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+      const weatherResponse = await fetch(weatherUrl);
+      const weatherData = await weatherResponse.json();
+
       const dailyForecast = {};
-      data.list.forEach((item) => {
+      weatherData.list.forEach((item) => {
         const date = new Date(item.dt * 1000).toLocaleDateString();
         if (!dailyForecast[date]) {
           dailyForecast[date] = item; 
         }
       });
 
-      
-      const dailyForecastArray = Object.values(dailyForecast).slice(0, 5);
-      setForecast(dailyForecastArray); 
+      const dailyForecastArray = Object.values(dailyForecast).slice(0, 5); 
+      setForecast(dailyForecastArray);
       setError(''); 
     } catch (error) {
       console.error('Error fetching weather data:', error);
       setForecast([]); 
-      setError('City not found. Please enter a valid city name.'); 
+      if (error.message === 'Invalid city') {
+        setError('Wrong city. Please enter the city correctly.'); 
+      } else {
+        setError('Unable to fetch weather data. Please try again later.');
+      }
     }
   };
 
@@ -38,6 +52,11 @@ const WeatherComponent = () => {
     if (city) {
       fetchWeatherData();
     }
+  };
+
+ 
+  const handleExit = () => {
+    navigate('/'); 
   };
 
   return (
@@ -49,17 +68,28 @@ const WeatherComponent = () => {
           value={city}
           onChange={(e) => setCity(e.target.value)}
           placeholder="Enter city name"
-          className="border border-gray-300 p-2 rounded-l-md w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 p-2 rounded-l-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           onClick={handleSearch}
-          className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 transition"
+          className="ml-2 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition"
         >
           Get Forecast
         </button>
       </div>
 
+      
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+
+      
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={handleExit}
+          className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition"
+        >
+          Exit
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 md:grid-cols-3">
         {forecast.map((day, index) => (

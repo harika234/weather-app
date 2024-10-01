@@ -1,13 +1,20 @@
-// src/App.js
 import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import WeatherComponent from './WeatherComponent';
-import './tailwind.css'; // Import Tailwind CSS
+import WelcomePage from './WelcomePage';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center"> {/* Gradient background */}
-      <WeatherComponent />
-    </div>
+    <Router>
+      <div className="min-h-screen bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center">
+        <Routes>
+         
+          <Route path="/" element={<WelcomePage />} />
+         
+          <Route path="/weather" element={<WeatherComponent />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
